@@ -65,16 +65,20 @@ pip install --target vendor pyinstaller
 
 # 生成单文件可执行（Windows 隐藏控制台并设置自定义图标/任务栏图标）
 pyinstaller --onefile --windowed --icon icon.ico --name pdf2md ^
-  --add-data "vendor:vendor" ^
+  --add-data "vendor;vendor" ^
+  --add-data "icon.ico;." ^
   main.py
-# Linux/macOS 下去掉 ^ 改用 \ 即可
+# Linux/macOS 下改为:
+# pyinstaller --onefile --windowed --icon icon.ico --name pdf2md \
+#   --add-data "vendor:vendor" \
+#   --add-data "icon.ico:."
 # 产物位于 dist/pdf2md
 ```
 - 若不需要携带 vendor，可去掉 `--add-data "vendor:vendor"`。
 - 跨平台需在目标平台重新打包。
 ```
 测试命令： 
-pyinstaller --onefile --windowed --name pdf转md  main.py --icon icon.ico
+pyinstaller --onefile --windowed --icon icon.ico --name pdf转md --add-data "icon.ico;."  main.py
 ```
 ## 使用提示
 - “选择单个PDF”/“选择多个PDF”添加待转换文件。

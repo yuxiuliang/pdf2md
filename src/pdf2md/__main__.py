@@ -22,10 +22,22 @@ def _resolve_icon_path() -> Path | None:
     日期: 2025-12-17
     作者: 余炘洋
     """
-    # PyInstaller 运行态会在 sys._MEIPASS 下存放资源
-    base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
-    icon_path = base_dir / "icon.ico"
-    return icon_path if icon_path.exists() else None
+    candidates = []
+    # PyInstaller 展开目录
+    if hasattr(sys, "_MEIPASS"):
+        candidates.append(Path(sys._MEIPASS))  # type: ignore[attr-defined]
+    # 可执行文件所在目录（打包后）
+    candidates.append(Path(sys.executable).resolve().parent)
+    # 项目根目录（源码模式）
+    candidates.append(Path(__file__).resolve().parents[2])
+    # 当前工作目录兜底
+    candidates.append(Path.cwd())
+
+    for base in candidates:
+        icon_path = base / "icon.ico"
+        if icon_path.exists():
+            return icon_path
+    return None
 
 
 def _apply_icon(root: tk.Tk) -> None:
