@@ -1,1 +1,5 @@
 *.iml
+.idea/
+__pycache__/
+*.pyc
+.pyhome/
