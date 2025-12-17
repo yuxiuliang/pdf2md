@@ -1,4 +1,6 @@
-# pdf2md
+# PDF-MD Bridge
+
+PDF-MD Bridge 是一款图形界面 PDF 与 Markdown 互转工具
 
 日期: 2025-12-17  
 作者: 余炘洋  
