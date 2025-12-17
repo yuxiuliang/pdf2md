@@ -63,11 +63,16 @@ pip install pyinstaller
 # 或便携方式
 pip install --target vendor pyinstaller
 
-# 生成单文件可执行
-pyinstaller --onefile --name pdf2md \
-  --add-data "vendor:vendor" \
+# 生成单文件可执行（Windows 如需隐藏控制台，加上 --windowed/--noconsole）
+pyinstaller --onefile --windowed --name pdf2md ^
+  --add-data "vendor:vendor" ^
   main.py
+# Linux/macOS 下去掉 ^ 改用 \ 即可
 # 产物位于 dist/pdf2md
+```
+```
+测试命令： 
+pyinstaller --onefile --windowed --name pdf转md  main.py --icon icon.ico
 ```
 - 如需图标，追加 `--icon path/to/icon.ico`。
 - 跨平台需在目标平台重新打包。
