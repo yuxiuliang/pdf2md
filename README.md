@@ -86,7 +86,7 @@ pyinstaller --onefile --windowed --icon icon.ico --name pdf2md ^
 - 跨平台需在目标平台重新打包。
 ```
 测试命令： 
-pyinstaller --onefile --windowed --icon icon.ico --name pdf转md --add-data "icon.ico;."  main.py
+pyinstaller --onefile --windowed --icon icon.ico --name pdf2md    --add-data "fonts;fonts"   --add-data "icon.ico;."  main.py
 ```
 ## 使用提示
 - “选择单个PDF”/“选择多个PDF”添加待转换文件。
