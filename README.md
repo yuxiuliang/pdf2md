@@ -4,13 +4,15 @@
 作者: 余炘洋  
 
 ## 功能概览
-- 图形界面，支持单个/批量选择 PDF。
+- 图形界面，支持单个/批量转换
+  - PDF -> Markdown
+  - Markdown -> PDF（文本导出，简单段落排版）
 - 每个文件独立进度条与状态提示。
 - 可自定义输出目录，默认与源文件同级。
 
 ## 环境要求
 - Python >= 3.10
-- 依赖见 `requirements.txt`（核心为 `pypdf`）
+- 依赖见 `requirements.txt`（核心：`pypdf`、`fpdf2`）
 
 ## 安装与运行
 ```bash
@@ -47,6 +49,12 @@ python -m pdf2md                    # 或 python main.py
 $env:PYTHONPATH="D:\Software\pdf2md\src"
 python -m pdf2md
 ```
+
+## 字体说明（MD -> PDF 需 Unicode 字体）
+- 请在项目根目录放置 `fonts/` 文件夹，并存放任意支持中文的 `.ttf` 或 `.otf`，如 `simhei.ttf` / `NotoSansSC-Regular.otf`。
+- 或设置环境变量 `PDF2MD_FONT_PATH` 指向字体文件；`PDF2MD_FONT_DIR` 指向字体目录。
+- Windows 常见可用字体：`C:\Windows\Fonts\simhei.ttf`、`simsun.ttf` 等；程序会自动尝试。
+- 打包时若需携带字体，命令里添加 `--add-data "icon.ico;." --add-data "fonts;fonts"`（Windows，`;` 分隔；类 Unix 用 `:`）。
 
 ## 项目结构
 - `pyproject.toml`：项目元数据与依赖声明

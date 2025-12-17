@@ -13,7 +13,8 @@ authors = [
   {name = "余炘洋"}
 ]
 dependencies = [
-  "pypdf>=6.4.2"
+  "pypdf>=6.4.2",
+  "fpdf2>=2.8.1"
 ]
 
 [project.scripts]

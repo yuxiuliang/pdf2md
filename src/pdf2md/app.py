@@ -14,7 +14,7 @@ from typing import Dict
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from pdf2md.converter import PdfConverter
+from pdf2md.converter import MdToPdfConverter, PdfConverter
 
 
 class FileItem:
@@ -75,6 +75,14 @@ class FileItem:
         """
         self.status_var.set(status)
 
+    def destroy(self) -> None:
+        """销毁自身行，便于切换模式时清空列表
+
+        日期: 2025-12-17
+        作者: 余炘洋
+        """
+        self._row.destroy()
+
 
 class Pdf2MdApp:
     """主 GUI 应用，负责文件管理与任务调度
@@ -95,7 +103,9 @@ class Pdf2MdApp:
 
         self.output_dir = tk.StringVar()
         self.items: Dict[str, FileItem] = {}
-        self.converter = PdfConverter(self._on_progress)
+        self.mode = tk.StringVar(value="pdf2md")  # pdf2md 或 md2pdf
+        self.pdf_converter = PdfConverter(self._on_progress)
+        self.md_converter = MdToPdfConverter(self._on_progress)
         self.worker: threading.Thread | None = None
         self._build_ui()
 
@@ -108,10 +118,28 @@ class Pdf2MdApp:
         action_frame = ttk.Frame(self.root, padding=10)
         action_frame.pack(fill="x")
 
-        ttk.Button(action_frame, text="选择单个PDF", command=self._select_single).pack(
+        mode_frame = ttk.Frame(action_frame)
+        mode_frame.pack(side="left", padx=(0, 12))
+        ttk.Label(mode_frame, text="转换方向:").pack(side="left", padx=(0, 4))
+        ttk.Radiobutton(
+            mode_frame,
+            text="PDF -> MD",
+            value="pdf2md",
+            variable=self.mode,
+            command=self._on_mode_change,
+        ).pack(side="left")
+        ttk.Radiobutton(
+            mode_frame,
+            text="MD -> PDF",
+            value="md2pdf",
+            variable=self.mode,
+            command=self._on_mode_change,
+        ).pack(side="left", padx=(4, 0))
+
+        ttk.Button(action_frame, text="选择单个文件", command=self._select_single).pack(
             side="left", padx=4
         )
-        ttk.Button(action_frame, text="选择多个PDF", command=self._select_multiple).pack(
+        ttk.Button(action_frame, text="选择多个文件", command=self._select_multiple).pack(
             side="left", padx=4
         )
         ttk.Button(action_frame, text="选择输出目录", command=self._select_output_dir).pack(
@@ -153,7 +181,8 @@ class Pdf2MdApp:
         作者: 余炘洋
         """
         file_path = filedialog.askopenfilename(
-            title="选择PDF文件", filetypes=[("PDF 文件", "*.pdf")]
+            title="选择文件",
+            filetypes=self._filetypes(),
         )
         if file_path:
             self._append_file(Path(file_path))
@@ -165,7 +194,7 @@ class Pdf2MdApp:
         作者: 余炘洋
         """
         files = filedialog.askopenfilenames(
-            title="选择多个PDF文件", filetypes=[("PDF 文件", "*.pdf")]
+            title="选择多个文件", filetypes=self._filetypes()
         )
         for file_path in files:
             self._append_file(Path(file_path))
@@ -189,6 +218,10 @@ class Pdf2MdApp:
         if str(file_path) in self.items:
             return
 
+        if not self._is_ext_valid(file_path):
+            messagebox.showinfo("提示", f"当前模式仅支持 {self._ext_filter_desc()} 文件")
+            return
+
         if not self.output_dir.get():
             self.output_dir.set(str(file_path.parent))
 
@@ -205,7 +238,7 @@ class Pdf2MdApp:
         作者: 余炘洋
         """
         if not self.items:
-            messagebox.showinfo("提示", "请先选择至少一个PDF文件")
+            messagebox.showinfo("提示", "请先选择至少一个文件")
             return
 
         if self.worker and self.worker.is_alive():
@@ -229,15 +262,20 @@ class Pdf2MdApp:
         作者: 余炘洋
         """
         for file_key, item in self.items.items():
-            pdf_path = Path(file_key)
-            self._update_status_async(pdf_path, "转换中")
-            self._update_progress_async(pdf_path, 1)
+            src_path = Path(file_key)
+            self._update_status_async(src_path, "转换中")
+            self._update_progress_async(src_path, 1)
             try:
-                self.converter.convert(pdf_path, output_dir)
-                self._update_status_async(pdf_path, "完成")
+                if not self._is_ext_valid(src_path):
+                    raise ValueError(f"文件格式不匹配，当前模式需要 {self._ext_filter_desc()}")
+                if self.mode.get() == "pdf2md":
+                    self.pdf_converter.convert(src_path, output_dir)
+                else:
+                    self.md_converter.convert(src_path, output_dir)
+                self._update_status_async(src_path, "完成")
             except Exception as exc:  # pragma: no cover - 运行时异常提示
-                self._update_status_async(pdf_path, "失败")
-                self._show_error_async(pdf_path, exc)
+                self._update_status_async(src_path, "失败")
+                self._show_error_async(src_path, exc)
 
     def _on_progress(self, file_path: str, percent: int) -> None:
         """转换进度回调
@@ -286,3 +324,42 @@ class Pdf2MdApp:
             messagebox.showerror("转换失败", f"{file_path.name} 转换失败: {exc}")
 
         self.root.after(0, _apply)
+
+    def _filetypes(self) -> list[tuple[str, str]]:
+        """根据当前模式返回文件过滤
+
+        日期: 2025-12-17
+        作者: 余炘洋
+        """
+        if self.mode.get() == "pdf2md":
+            return [("PDF 文件", "*.pdf")]
+        return [("Markdown 文件", "*.md")]
+
+    def _is_ext_valid(self, path: Path) -> bool:
+        """校验扩展名是否匹配当前模式
+
+        日期: 2025-12-17
+        作者: 余炘洋
+        """
+        suffix = path.suffix.lower()
+        return (self.mode.get() == "pdf2md" and suffix == ".pdf") or (
+            self.mode.get() == "md2pdf" and suffix == ".md"
+        )
+
+    def _ext_filter_desc(self) -> str:
+        """返回当前模式允许的扩展名描述
+
+        日期: 2025-12-17
+        作者: 余炘洋
+        """
+        return ".pdf" if self.mode.get() == "pdf2md" else ".md"
+
+    def _on_mode_change(self) -> None:
+        """切换模式时清空已选文件，避免模式混用导致解析错误
+
+        日期: 2025-12-17
+        作者: 余炘洋
+        """
+        for item in self.items.values():
+            item.destroy()
+        self.items.clear()
