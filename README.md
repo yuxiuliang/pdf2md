@@ -92,4 +92,4 @@ pyinstaller --onefile --name pdf2md \
 - 举报方式：Issue 或邮件联系维护者（作者：余炘洋），请附复现/证据。
 
 ## 许可证
-基于 Apache License Version 2.0 许可证，详见 `LICENSE`。
+基于 Apache License Version 2.0 许可证，详见 [LICENSE](LICENSE) 文件。
